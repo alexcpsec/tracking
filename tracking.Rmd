@@ -15,9 +15,9 @@ library(ggplot2)
 
 Setting up the path of the files we want to analyse
 ```{r}
-logs_path = file.path(getwd(), "clean_logs")
-apache_log_path = file.path(logs_path, "sniff_apache_log.txt")
-trackertime_log_path = file.path(logs_path, "trackers_unix_times.txt")
+logs_path = file.path(getwd(), "logs2")
+apache_log_path = file.path(logs_path, "sniff_apache_log2.txt")
+trackertime_log_path = file.path(logs_path, "trackers_unix_times2.txt")
 ```
 
 Reading the apache_logs and doing some light regex. We will extract the date and the
