@@ -92,23 +92,32 @@ print(prop_verizon)
 
 All right! Let's try to create a graph now!
 
-```{r}
-dt_graph = rbind(data.table(Date=names(prop_verizon), Percentage=as.numeric(prop_verizon), ISP="Verizon"),
-                 data.table(Date=names(prop_att), Percentage=as.numeric(prop_att), ISP="AT&T"))
+```{r,fig.width=15,fig.height=12}
+dt_graph = rbind(data.table(Date=names(prop_verizon), Percentage=100*as.numeric(prop_verizon), ISP="Verizon"),
+                 data.table(Date=names(prop_att), Percentage=100*as.numeric(prop_att), ISP="AT&T"))
 
-ggplot(dt_graph, aes(Date, Percentage, fill=ISP)) +
-    geom_bar(position="dodge", stat="identity") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1, size=10)) +
-    theme(axis.text.y = element_text(hjust = 1, size=12)) +
-    ggtitle("Percentage of Verizon and AT&T UIDs over time\nAs seen on lessonslearned.org/sniff")
+sidebar = ggplot(dt_graph, aes(Date, Percentage, fill=ISP)) +
+            geom_bar(position="dodge", stat="identity") +
+            theme(axis.text.x = element_text(angle = 45, hjust = 1, size=16)) +
+            theme(axis.text.y = element_text(hjust = 1, size=16)) +
+            theme(title = element_text(size=18)) +
+            theme(axis.title = element_text(size=18)) +
+            theme(legend.text = element_text(size=14)) +
+            ggtitle("Percentage of Verizon and AT&T UIDs over time\nAs seen on lessonslearned.org/sniff")
+
+sidebar
 ```
 
 We can do Stacked Bars as well!
 
-```{r}
-ggplot(dt_graph, aes(Date, Percentage, fill=ISP)) +
-    geom_bar(stat="identity") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1, size=10)) +
-    theme(axis.text.y = element_text(hjust = 1, size=12)) +
-    ggtitle("Percentage of Verizon and AT&T UIDs over time\nAs seen on lessonslearned.org/sniff")
+```{r,fig.width=15,fig.height=12}
+stackbar = ggplot(dt_graph, aes(Date, Percentage, fill=ISP)) +
+            geom_bar(stat="identity") +
+            theme(axis.text.x = element_text(angle = 45, hjust = 1, size=16)) +
+            theme(axis.text.y = element_text(hjust = 1, size=16)) +
+            theme(title = element_text(size=18)) +
+            theme(axis.title = element_text(size=18)) +
+            theme(legend.text = element_text(size=14)) +
+            ggtitle("Percentage of Verizon and AT&T UIDs over time\nAs seen on lessonslearned.org/sniff")
+stackbar
 ```

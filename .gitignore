@@ -13,5 +13,6 @@
 # Data Files
 clean_logs/
 clean_logs.zip
+.DS_Store
 
 .Rproj.user
