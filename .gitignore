@@ -9,3 +9,9 @@
 
 # RStudio files
 .Rproj.user/
+
+# Data Files
+clean_logs/
+clean_logs.zip
+
+.Rproj.user
