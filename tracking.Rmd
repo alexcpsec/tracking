@@ -1,0 +1,114 @@
+---
+title: "Tracking Cookies Data Analysis - ATT & Verizon"
+author: "Alex Pinto / Kenn White"
+date: "November 18, 2014"
+output: html_document
+---
+
+Adding some libraries
+```{r}
+library(data.table)
+library(lubridate)
+library(reshape2)
+library(ggplot2)
+```
+
+Setting up the path of the files we want to analyse
+```{r}
+logs_path = file.path(getwd(), "clean_logs")
+apache_log_path = file.path(logs_path, "sniff_apache_log.txt")
+trackertime_log_path = file.path(logs_path, "trackers_unix_times.txt")
+```
+
+Reading the apache_logs and doing some light regex. We will extract the date and the
+user agent for further editing
+```{r}
+apache_logs = readLines(apache_log_path)
+apache_len = length(apache_logs)
+parsed_apache_ts = gsub("^\\[(.*?)\\] .*? (.*) /var/www/html/sniff.*", "\\1", apache_logs)
+parsed_apache_agent = gsub("^\\[(.*?)\\] .*? (.*) /var/www/html/sniff.*", "\\2", apache_logs)
+dt_apache = data.table(timestamp = parsed_apache_ts, agent = parsed_apache_agent)
+rm(apache_logs, parsed_apache_ts, parsed_apache_agent)
+
+## Only mobile (Android + iPhone) stuff, plz
+## Oh, BTW, there is BlackBerry too
+dt_apache = dt_apache[  grepl("Android", dt_apache$agent) 
+                      | grepl("iPhone", dt_apache$agent)
+                      | grepl("BlackBerry", dt_apache$agent)
+                      | grepl("BB10", dt_apache$agent)]
+
+print(paste("Percentage of traffic coming from Android and iPhone:", nrow(dt_apache)/apache_len))
+print(head(dt_apache))
+```
+
+Reading the tracker logs and extracting the data from the timestamp and tracker data.
+Separate them out for independent tracking
+```{r}
+trackertime_logs = readLines(trackertime_log_path)
+print(length(trackertime_logs))
+dt_tracker = as.data.table(matrix(unlist(strsplit(trackertime_logs, "\\|")), ncol=2, byrow=T))
+setnames(dt_tracker, c("V1","V2"), c("tracker", "timestamp"))
+dt_tracker[, timestamp := as.integer(as.character(timestamp))]
+
+## Separating the tracker groups out
+dt_att = dt_tracker[grepl("ACR", dt_tracker$tracker, fixed=TRUE)]
+dt_verizon = dt_tracker[grepl("UIDH", dt_tracker$tracker, fixed=TRUE)]
+
+print(nrow(dt_att))
+print(dt_att)
+print(nrow(dt_verizon))
+print(dt_verizon)
+```
+
+Cleaning up the timestamps on the Apache logs and flooring the date for counting
+how many entries we have on each day. Calulating the tables of entries per day.
+```{r}
+ts_apache = parse_date_time(dt_apache$timestamp, orders="%d/%b/%Y:%H:%M:%S %z", tz="UTC")
+ts_apache_floor = floor_date(ts_apache, "day")
+table_apache = table(ts_apache_floor)
+table_apache
+````
+
+Cleaning up the timestamps on the ATT and Verizon data flooring the date for counting
+how many entries we have on each day. Calculating the proportions
+
+```{r}
+ts_att = as.POSIXct(dt_att$timestamp, origin="1970-01-01", tz="UTC")
+ts_att_floor = floor_date(ts_att, "day")
+table_att = table(ts_att_floor)
+print(table_att)
+prop_att = table_att/table_apache
+print(prop_att)
+```
+
+```{r}
+ts_verizon = as.POSIXct(dt_verizon$timestamp, origin="1970-01-01", tz="UTC")
+ts_verizon_floor = floor_date(ts_verizon, "day")
+table_verizon = table(ts_verizon_floor)
+print(table_verizon)
+prop_verizon = table_verizon/table_apache
+print(prop_verizon)
+```
+
+All right! Let's try to create a graph now!
+
+```{r}
+dt_graph = rbind(data.table(Date=names(prop_verizon), Percentage=as.numeric(prop_verizon), ISP="Verizon"),
+                 data.table(Date=names(prop_att), Percentage=as.numeric(prop_att), ISP="AT&T"))
+
+ggplot(dt_graph, aes(Date, Percentage, fill=ISP)) +
+    geom_bar(position="dodge", stat="identity") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, size=10)) +
+    theme(axis.text.y = element_text(hjust = 1, size=12)) +
+    ggtitle("Percentage of Verizon and AT&T UIDs over time\nAs seen on lessonslearned.org/sniff")
+```
+
+We can do Stacked Bars as well!
+
+```{r}
+ggplot(dt_graph, aes(Date, Percentage, fill=ISP)) +
+    geom_bar(stat="identity") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, size=10)) +
+    theme(axis.text.y = element_text(hjust = 1, size=12)) +
+    ggtitle("Percentage of Verizon and AT&T UIDs over time\nAs seen on lessonslearned.org/sniff")
+```
